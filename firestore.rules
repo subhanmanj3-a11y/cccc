@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net - catch-all default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- PRIMITIVE SECURE HELPERS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- ENTITY VALIDATIONS ---
+    function isValidUser(user) {
+      return user.uid == request.auth.uid
+        && user.name is string && user.name.size() <= 100
+        && user.email is string && user.email.size() <= 150
+        && user.level is int
+        && user.avatar is string && user.avatar.size() <= 50;
+    }
+
+    function isValidDeal(deal) {
+      return deal.id is string && deal.id.size() <= 128
+        && deal.shop is string && deal.shop.size() <= 150
+        && deal.title is string && deal.title.size() <= 200
+        && deal.disc is int && deal.disc >= 1 && deal.disc < 100
+        && deal.cat is string && deal.cat.size() <= 50
+        && deal.orig is int && deal.orig >= 0
+        && deal.price is int && deal.price >= 0;
+    }
+
+    function isValidBookmark(bookmark) {
+      return bookmark.id is string && bookmark.id.size() <= 128
+        && bookmark.userId == request.auth.uid
+        && bookmark.dealId is string && bookmark.dealId.size() <= 128;
+    }
+
+    function isValidRoute(route) {
+      return route.id is string && route.id.size() <= 128
+        && route.userId == request.auth.uid
+        && route.from is string && route.from.size() <= 200
+        && route.to is string && route.to.size() <= 200
+        && route.alertRadius is int && route.alertRadius >= 100
+        && route.active is bool;
+    }
+
+    // --- MATCH BLOCKS ---
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if false; // Deny query scraping of user directories
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) 
+                     && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'avatar', 'level']);
+      allow delete: if false; // Immortal accounts
+    }
+
+    // Deals Collection
+    match /deals/{dealId} {
+      allow read: if true; // Public listings
+      allow write: if isSignedIn() && isValidId(dealId) 
+                    && (resource == null ? isValidDeal(incoming()) : (isValidDeal(incoming()) && incoming().creatorUid == existing().creatorUid));
+    }
+
+    // User Bookmarks (subcollection)
+    match /users/{userId}/bookmarks/{bookmarkId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidId(bookmarkId) 
+                    && (resource == null ? isValidBookmark(incoming()) : isValidBookmark(incoming()));
+    }
+
+    // User Commute Routes
+    match /users/{userId}/routes/{routeId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && isValidId(routeId)
+                    && (resource == null ? isValidRoute(incoming()) : isValidRoute(incoming()));
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Information about a registered scout or business owner.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "level": { "type": "number" },
+        "avatar": { "type": "string" },
+        "verified": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "Deal": {
+      "title": "Hyperlocal Deal",
+      "description": "A deal created by verified businesses or scouts.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "shop": { "type": "string" },
+        "emoji": { "type": "string" },
+        "cat": { "type": "string" },
+        "tag": { "type": "string" },
+        "title": { "type": "string" },
+        "disc": { "type": "number" },
+        "dist": { "type": "number" },
+        "expiry": { "type": "number" },
+        "flash": { "type": "boolean" },
+        "rating": { "type": "number" },
+        "worthit": { "type": "number" },
+        "sightingsCount": { "type": "number" },
+        "desc": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "orig": { "type": "number" },
+        "price": { "type": "number" },
+        "creatorUid": { "type": "string" }
+      },
+      "required": ["id", "shop", "title", "disc", "cat", "orig", "price"]
+    },
+    "Bookmark": {
+      "title": "Bookmark Link",
+      "description": "A relational record of a user bookmarking a particular deal.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "dealId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "dealId"]
+    },
+    "Route": {
+      "title": "Commute Route",
+      "description": "A route alert registered by a user with start, end, and threshold.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "active": { "type": "boolean" },
+        "alertRadius": { "type": "number" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "categories": { "type": "array" }
+      },
+      "required": ["id", "userId", "from", "to", "alertRadius"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile records containing credentials and level attributes."
+    },
+    "/deals/{dealId}": {
+      "schema": "Deal",
+      "description": "General feed deals master table queryable by category and bounds."
+    },
+    "/users/{userId}/bookmarks/{bookmarkId}": {
+      "schema": "Bookmark",
+      "description": "Bookmark map records linking user sessions to target deals."
+    },
+    "/users/{userId}/routes/{routeId}": {
+      "schema": "Route",
+      "description": "User's morning or evening transition commute path alerts configs."
+    }
+  }
+}

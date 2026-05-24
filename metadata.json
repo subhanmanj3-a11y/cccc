@@ -1,0 +1,6 @@
+{
+  "name": "Neardis",
+  "description": "Hyperlocal deal discovery and real-time scout alerts synchronized across devices.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
